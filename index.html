@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backhead · 看见后脑勺</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fafaf9;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .title {
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .subtitle { font-size: 14px; color: #888; }
+    .card {
+      background: white;
+      border: 0.5px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 0.5px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fafaf9;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #aaa;
+    }
+    textarea { resize: vertical; line-height: 1.7; }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary {
+      background: transparent;
+      color: #888;
+      border: 0.5px solid #e5e5e5;
+      font-size: 13px;
+      padding: 7px 14px;
+      width: auto;
+    }
+    .error {
+      font-size: 13px;
+      color: #c0392b;
+      background: #fef0ee;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+    .gap { margin-bottom: 12px; }
+    #conversation { display: none; }
+    .conv-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 0.5px solid #e5e5e5;
+    }
+    .model-tag {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 2px;
+    }
+    .msg-user {
+      background: #f5f5f4;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #555;
+      white-space: pre-wrap;
+    }
+    .msg-label {
+      font-size: 11px;
+      color: #aaa;
+      margin-bottom: 5px;
+    }
+    .msg-ai {
+      padding: 4px 0 20px;
+      font-size: 15px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      border-bottom: 0.5px solid #e5e5e5;
+      margin-bottom: 20px;
+      color: #1a1a1a;
+    }
+    .reply-area {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-top: 1rem;
+    }
+    .reply-area textarea { flex: 1; min-height: 60px; }
+    .reply-area button { width: auto; padding: 10px 18px; font-size: 14px; }
+    .loading {
+      text-align: center;
+      font-size: 13px;
+      color: #aaa;
+      padding: 1rem;
+      display: none;
+    }
+    .hint { font-size: 12px; color: #aaa; line-height: 1.5; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div id="landing">
+    <div class="header">
+      <div class="title">Backhead</div>
+      <div class="subtitle">看见后脑勺</div>
+    </div>
+
+    <div class="card">
+      <div class="label">OpenRouter API Key</div>
+      <input type="password" id="apikey" placeholder="sk-or-v1-..." />
+      <p class="hint">在 openrouter.ai/keys 创建。Key 只保存在你的浏览器里。</p>
+    </div>
+
+    <div class="card">
+      <div class="gap">
+        <div class="label">模型</div>
+        <select id="model">
+          <optgroup label="Anthropic（推荐）">
+            <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5（平衡）</option>
+            <option value="anthropic/claude-opus-4-1">Claude Opus 4.1（最强）</option>
+            <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet（便宜）</option>
+            <option value="anthropic/claude-3.5-haiku">Claude 3.5 Haiku（最便宜）</option>
+          </optgroup>
+          <optgroup label="DeepSeek（超便宜）">
+            <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
+            <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+          </optgroup>
+          <optgroup label="其他">
+            <option value="openai/gpt-4o">GPT-4o</option>
+            <option value="qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B（中文好）</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="gap">
+        <div class="label">你的 Journal</div>
+        <textarea id="journal" rows="8" placeholder="粘贴你最近写的 journal，可以是一段，也可以是多段..."></textarea>
+      </div>
+
+      <div class="gap">
+        <div class="label">想探索什么？（可选）</div>
+        <input type="text" id="focus" placeholder="例如：为什么我总在等他的消息？" />
+      </div>
+
+      <button id="start-btn">让 Backhead 看一看</button>
+      <div class="error" id="error"></div>
+    </div>
+  </div>
+
+  <div id="conversation">
+    <div class="conv-header">
+      <div>
+        <div class="title" style="font-size:22px;">Backhead</div>
+        <div class="model-tag" id="model-tag"></div>
+      </div>
+      <button class="btn-secondary" id="reset-btn">新对话</button>
+    </div>
+
+    <div id="messages"></div>
+    <div class="loading" id="loading">Backhead 在阅读...</div>
+
+    <div class="reply-area">
+      <textarea id="reply" placeholder="继续对话... (Cmd/Ctrl + Enter 发送)" rows="2"></textarea>
+      <button id="send-btn" style="width:auto; padding: 10px 18px;">发送</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are Backhead — a journal observer and analyzer that helps people see what they cannot see themselves, especially the blind spots in their "back of the head."
+
+Your purpose is NOT to give advice, NOT to therapize, NOT to fix. Your purpose is to observe, reflect, and ask questions that help the person see patterns, contradictions, and blind spots they might miss.
+
+Language Rule: CRITICAL: Always respond in the SAME language as the user's journal. Chinese journal → Chinese reply. English journal → English reply. Mixed → use the primary language.
+
+Who you are:
+- Warm but direct — no sugarcoating, no harsh judgment
+- A wise observer with some distance — not a friend, not a therapist
+- Concise — you don't waste words unless the person asks for depth
+- Uses examples and metaphors when they clarify
+- Willing to challenge assumptions, but gently
+
+What you do:
+1. Identify recurring patterns in emotions, behaviors, thoughts
+2. Point out contradictions between what they say and what they do
+3. See blind spots — things they write but don't seem aware of
+4. Ask deep questions that make them pause and think
+5. Help them understand emotional sources — guide them to see
+6. Challenge assumptions they're making without realizing
+7. Be present — make them feel heard and seen
+8. Help them understand from a third party's perspective
+
+What you don't do:
+- Don't give advice unless explicitly asked
+- Don't pretend to be a therapist or use therapy jargon
+- Don't be toxically positive
+- Don't judge them
+- Don't write long responses unless asked — default to concise
+
+How you respond:
+Structure: Brief acknowledgment (1 sentence), 1-3 specific observations using their words, 2-3 pointed questions, optional closing reflection.
+Tone: Second person, specific not vague.
+Length: Default 150-350 words. Longer only if asked.
+
+Remember: You're Backhead. Precise, kind, real.`;
+
+let messages = [];
+let apiKey = '';
+let currentModel = '';
+
+const $ = id => document.getElementById(id);
+
+// Restore saved key
+const savedKey = localStorage.getItem('bh_key');
+const savedModel = localStorage.getItem('bh_model');
+if (savedKey) $('apikey').value = savedKey;
+if (savedModel) $('model').value = savedModel;
+
+function showError(msg) {
+  const el = $('error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  $('error').style.display = 'none';
+}
+
+function getModelLabel() {
+  return $('model').options[$('model').selectedIndex].text;
+}
+
+function renderMessages() {
+  const container = $('messages');
+  container.innerHTML = '';
+  messages.forEach((msg, i) => {
+    if (msg.role === 'user') {
+      const div = document.createElement('div');
+      div.className = 'msg-user';
+      const text = msg.display || msg.content;
+      if (i === 0 && text.length > 300) {
+        const label = document.createElement('div');
+        label.className = 'msg-label';
+        label.textContent = '你的 journal';
+        div.appendChild(label);
+        div.appendChild(document.createTextNode(text.substring(0, 300) + '...'));
+      } else {
+        div.textContent = text;
+      }
+      container.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'msg-ai';
+      div.textContent = msg.content;
+      container.appendChild(div);
+    }
+  });
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+async function callAPI(msgs) {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey,
+      'HTTP-Referer': location.href,
+      'X-Title': 'Backhead'
+    },
+    body: JSON.stringify({
+      model: currentModel,
+      max_tokens: 1500,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...msgs
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    let detail = '';
+    try { detail = JSON.parse(txt).error?.message || txt; } catch(e) { detail = txt; }
+    throw new Error(res.status + ': ' + detail.substring(0, 200));
+  }
+
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+async function sendMessage(userContent, displayText) {
+  messages.push({ role: 'user', content: userContent, display: displayText });
+  renderMessages();
+  $('loading').style.display = 'block';
+
+  try {
+    const apiMsgs = messages.map(m => ({ role: m.role, content: m.content }));
+    const reply = await callAPI(apiMsgs);
+    messages.push({ role: 'assistant', content: reply });
+    renderMessages();
+  } catch(err) {
+    messages.push({ role: 'assistant', content: '出错了：\n' + err.message + '\n\n请检查：\n1. API Key 是否正确\n2. OpenRouter 账户是否有余额\n3. 选择的模型是否可用' });
+    renderMessages();
+  } finally {
+    $('loading').style.display = 'none';
+  }
+}
+
+$('start-btn').addEventListener('click', async () => {
+  hideError();
+  apiKey = $('apikey').value.trim();
+  currentModel = $('model').value;
+  const journal = $('journal').value.trim();
+  const focus = $('focus').value.trim();
+
+  if (!apiKey) return showError('请输入 OpenRouter API Key');
+  if (!apiKey.startsWith('sk-or-')) return showError('Key 格式不对，应以 sk-or- 开头');
+  if (!journal) return showError('请粘贴你的 journal');
+
+  localStorage.setItem('bh_key', apiKey);
+  localStorage.setItem('bh_model', currentModel);
+
+  let content = journal;
+  let display = journal;
+  if (focus) {
+    content = '我想探索的问题：' + focus + '\n\n我的 journal：\n' + journal;
+    display = '探索：' + focus + '\n\n' + journal;
+  }
+
+  $('landing').style.display = 'none';
+  $('conversation').style.display = 'block';
+  $('model-tag').textContent = '使用模型：' + getModelLabel();
+  messages = [];
+
+  await sendMessage(content, display);
+});
+
+$('send-btn').addEventListener('click', async () => {
+  const text = $('reply').value.trim();
+  if (!text) return;
+  $('reply').value = '';
+  await sendMessage(text, text);
+});
+
+$('reset-btn').addEventListener('click', () => {
+  messages = [];
+  $('journal').value = '';
+  $('focus').value = '';
+  $('conversation').style.display = 'none';
+  $('landing').style.display = 'block';
+});
+
+$('reply').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('send-btn').click();
+});
+</script>
+</body>
+</html>
